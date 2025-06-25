@@ -1,0 +1,52 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "password": "adminRiya"
+    },
+    {
+      "username": "Mr_Kumar",
+      "password": "Ck@x",
+      "name": "Chandan",
+      "email": "kumar04@gmail.com",
+      "dateOfBirth": {
+        "month": "September",
+        "day": "13",
+        "year": "2002"
+      }
+    },
+    {
+      "username": "chandu",
+      "password": "1235",
+      "name": "sai chandu",
+      "email": "sai@123gamail.com",
+      "dateOfBirth": {
+        "month": "December",
+        "day": "1",
+        "year": "2002"
+      }
+    },
+    {
+      "username": "SupriyaVodnala",
+      "password": "sup123",
+      "name": "Supriya",
+      "email": "supriyavodnala06@gmail.com",
+      "dateOfBirth": {
+        "month": "January",
+        "day": "6",
+        "year": "2002"
+      }
+    },
+    {
+      "username": "Supriya",
+      "password": "12345",
+      "name": "Sup",
+      "email": "supriya@gmail.com",
+      "dateOfBirth": {
+        "month": "October",
+        "day": "6",
+        "year": "1985"
+      }
+    }
+  ]
+}
