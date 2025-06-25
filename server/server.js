@@ -1,25 +1,36 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config();
 
+// Import configuration and database connection
+const config = require('./config/config');
+const connectDB = require('./config/database');
+
+// Import middleware
+const requestLogger = require('./middleware/logger');
+const { errorHandler, notFound } = require('./middleware/errorHandler');
+
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = config.PORT;
+
+// Connect to MongoDB
+connectDB();
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5173', // Your React app URL
+  origin: config.FRONTEND_URL,
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+// Request logging middleware
+if (config.NODE_ENV === 'development') {
+  app.use(requestLogger);
+}
 
 // Import routes
 const tweetRoutes = require('./routes/tweets');
@@ -32,21 +43,44 @@ app.use('/api/users', userRoutes);
 // Test route
 app.get('/api/test', (req, res) => {
   res.json({ 
+    success: true,
     message: 'Backend server is running!',
-    timestamp: new Date().toISOString() 
+    server: 'Twitter Clone API',
+    version: '1.0.0',
+    environment: config.NODE_ENV,
+    timestamp: new Date().toISOString()
   });
 });
 
 // Health check route
 app.get('/api/health', (req, res) => {
   res.json({ 
+    success: true,
     status: 'OK',
     server: 'Twitter Clone Backend',
-    version: '1.0.0'
+    version: '1.0.0',
+    environment: config.NODE_ENV,
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString()
   });
 });
 
+// 404 handler for undefined routes
+app.use(notFound);
+
+// Global error handler
+app.use(errorHandler);
+
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log('🚀======================================🚀');
+  console.log('🎯 Twitter Clone Backend Server Started');
+  console.log('🚀======================================🚀');
+  console.log(`🌐 Server running on: http://localhost:${PORT}`);
+  console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
   console.log(`📱 Test endpoint: http://localhost:${PORT}/api/test`);
+  console.log(`💚 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`🌍 Environment: ${config.NODE_ENV}`);
+  console.log(`⏰ Started at: ${new Date().toLocaleString()}`);
+  console.log('🚀======================================🚀');
 });
