@@ -12,6 +12,7 @@ import NotificationsPage from './components/NotificationsPage';
 import MessagesPage from './components/MessagesPage';
 import type { Tweet, User } from './types';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 
 const currentUser: User = {
   id: '1',
@@ -87,47 +88,49 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="min-h-screen bg-black text-white">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="*" element={
-            <div className="flex">
-              <div className="w-72 flex-shrink-0">
-                <SideNav />
-              </div>
-              
-              <main className="flex-1 mr-96">  
-                <Routes>
-                  <Route 
-                    path="/home" 
-                    element={
-                      <HomePage 
-                        tweets={tweets}
-                        onTweet={handleTweet}
-                        onLike={handleLike}
-                        onRetweet={handleRetweet}
-                      />
-                    } 
-                  />
-                  <Route path="/explore" element={<ExplorePage />} />
-                  {/* Placeholder routes for other navigation items */}
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/messages" element={<MessagesPage />} />
-                  <Route path="/communities" element={<CommunitiesPage />} />
-                  <Route path="/premium" element={<PremiumPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                </Routes>
-              </main>
+    <AuthProvider>
+      <Router>
+        <div className="min-h-screen bg-black text-white">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="*" element={
+              <div className="flex">
+                <div className="w-72 flex-shrink-0">
+                  <SideNav />
+                </div>
+                
+                <main className="flex-1 mr-96">  
+                  <Routes>
+                    <Route 
+                      path="/home" 
+                      element={
+                        <HomePage 
+                          tweets={tweets}
+                          onTweet={handleTweet}
+                          onLike={handleLike}
+                          onRetweet={handleRetweet}
+                        />
+                      } 
+                    />
+                    <Route path="/explore" element={<ExplorePage />} />
+                    {/* Placeholder routes for other navigation items */}
+                    <Route path="/notifications" element={<NotificationsPage />} />
+                    <Route path="/messages" element={<MessagesPage />} />
+                    <Route path="/communities" element={<CommunitiesPage />} />
+                    <Route path="/premium" element={<PremiumPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                  </Routes>
+                </main>
 
-              <div className="w-96 fixed right-0 h-screen">
-                <TrendingSidebar />
+                <div className="w-96 fixed right-0 h-screen">
+                  <TrendingSidebar />
+                </div>
               </div>
-            </div>
-          } />
-        </Routes>
-      </div>
-    </Router>
+            } />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
