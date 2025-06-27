@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tweet as TweetComponent } from './components/Tweet';
 import { TweetBox } from './components/TweetBox';
 import { SideNav } from './components/SideNav';
@@ -10,23 +10,44 @@ import { CommunitiesPage } from './components/CommunitiesPage';
 import LandingPage from './components/LandingPage';
 import NotificationsPage from './components/NotificationsPage';
 import MessagesPage from './components/MessagesPage';
-import type { Tweet, User } from './types';
+import type { Tweet } from './types';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { apiService } from './services/apiService';
 
-const currentUser: User = {
-  id: '1',
-  name: 'John Doe',
-  username: 'johndoe',
-  avatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&h=100&fit=crop',
-};
+function HomePage() {
+  const [tweets, setTweets] = useState<Tweet[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-function HomePage({ tweets, onTweet, onLike, onRetweet }: { 
-  tweets: Tweet[], 
-  onTweet: (content: string) => void,
-  onLike: (id: string) => void,
-  onRetweet: (id: string) => void 
-}) {
+  // Fetch tweets from API
+  const fetchTweets = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.getTweets() as any;
+      if (response.success && response.data) {
+        setTweets(response.data);
+      } else {
+        setError('Failed to fetch tweets');
+      }
+    } catch (err) {
+      console.error('Error fetching tweets:', err);
+      setError('Failed to fetch tweets');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load tweets on component mount
+  useEffect(() => {
+    fetchTweets();
+  }, []);
+
+  // Handle new tweet creation
+  const handleNewTweet = (tweet: Tweet) => {
+    setTweets(prevTweets => [tweet, ...prevTweets]);
+  };
+
   return (
     <div className="min-h-screen border-l border-r border-gray-800">
       <header className="sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-gray-800">
@@ -35,14 +56,27 @@ function HomePage({ tweets, onTweet, onLike, onRetweet }: {
         </div>
       </header>
       <div className="p-4">
-        <TweetBox onTweet={onTweet} />
+        <TweetBox onTweet={handleNewTweet} />
         <div className="space-y-4 mt-4">
+          {isLoading && (
+            <div className="text-center py-8 text-gray-500">
+              Loading tweets...
+            </div>
+          )}
+          {error && (
+            <div className="text-center py-8 text-red-500">
+              {error}
+            </div>
+          )}
+          {!isLoading && !error && tweets.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No tweets yet. Be the first to tweet!
+            </div>
+          )}
           {tweets.map((tweet) => (
             <TweetComponent
-              key={tweet.id}
+              key={tweet._id}
               tweet={tweet}
-              onLike={onLike}
-              onRetweet={onRetweet}
             />
           ))}
         </div>
@@ -52,41 +86,6 @@ function HomePage({ tweets, onTweet, onLike, onRetweet }: {
 }
 
 function App() {
-  const [tweets, setTweets] = useState<Tweet[]>([
-    {
-      id: '1',
-      content: 'Just setting up my Twitter clone! 🚀',
-      author: currentUser,
-      likes: 0,
-      retweets: 0,
-      createdAt: new Date(),
-    },
-  ]);
-
-  const handleTweet = (content: string) => {
-    const newTweet: Tweet = {
-      id: String(Date.now()),
-      content,
-      author: currentUser,
-      likes: 0,
-      retweets: 0,
-      createdAt: new Date(),
-    };
-    setTweets([newTweet, ...tweets]);
-  };
-
-  const handleLike = (id: string) => {
-    setTweets(tweets.map(tweet => 
-      tweet.id === id ? { ...tweet, likes: tweet.likes + 1 } : tweet
-    ));
-  };
-
-  const handleRetweet = (id: string) => {
-    setTweets(tweets.map(tweet => 
-      tweet.id === id ? { ...tweet, retweets: tweet.retweets + 1 } : tweet
-    ));
-  };
-
   return (
     <AuthProvider>
       <Router>
@@ -103,14 +102,7 @@ function App() {
                   <Routes>
                     <Route 
                       path="/home" 
-                      element={
-                        <HomePage 
-                          tweets={tweets}
-                          onTweet={handleTweet}
-                          onLike={handleLike}
-                          onRetweet={handleRetweet}
-                        />
-                      } 
+                      element={<HomePage />} 
                     />
                     <Route path="/explore" element={<ExplorePage />} />
                     {/* Placeholder routes for other navigation items */}

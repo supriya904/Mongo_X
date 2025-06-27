@@ -1,30 +1,30 @@
 // Standard API response format
-const successResponse = (res, data, message = 'Success', statusCode = 200) => {
-  return res.status(statusCode).json({
+const successResponse = (message = 'Success', data = null, statusCode = 200) => {
+  return {
     success: true,
     message,
     data,
     timestamp: new Date().toISOString()
-  });
+  };
 };
 
 // Error response format
-const errorResponse = (res, message = 'Internal Server Error', statusCode = 500, errors = null) => {
-  return res.status(statusCode).json({
+const errorResponse = (message = 'Internal Server Error', errors = null, statusCode = 500) => {
+  return {
     success: false,
     message,
     errors,
     timestamp: new Date().toISOString()
-  });
+  };
 };
 
 // Paginated response format
-const paginatedResponse = (res, data, page, limit, total, message = 'Success') => {
+const paginatedResponse = (message = 'Success', data = null, page = 1, limit = 20, total = 0) => {
   const totalPages = Math.ceil(total / limit);
   const hasNext = page < totalPages;
   const hasPrev = page > 1;
   
-  return res.status(200).json({
+  return {
     success: true,
     message,
     data,
@@ -37,11 +37,27 @@ const paginatedResponse = (res, data, page, limit, total, message = 'Success') =
       hasPrev
     },
     timestamp: new Date().toISOString()
-  });
+  };
+};
+
+// Response with status helpers
+const sendSuccessResponse = (res, message = 'Success', data = null, statusCode = 200) => {
+  return res.status(statusCode).json(successResponse(message, data, statusCode));
+};
+
+const sendErrorResponse = (res, message = 'Internal Server Error', errors = null, statusCode = 500) => {
+  return res.status(statusCode).json(errorResponse(message, errors, statusCode));
+};
+
+const sendPaginatedResponse = (res, message = 'Success', data = null, page = 1, limit = 20, total = 0) => {
+  return res.status(200).json(paginatedResponse(message, data, page, limit, total));
 };
 
 module.exports = {
   successResponse,
   errorResponse,
-  paginatedResponse
+  paginatedResponse,
+  sendSuccessResponse,
+  sendErrorResponse,
+  sendPaginatedResponse
 };

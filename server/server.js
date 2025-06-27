@@ -35,10 +35,16 @@ if (config.NODE_ENV === 'development') {
 // Import routes
 const tweetRoutes = require('./routes/tweets');
 const userRoutes = require('./routes/users');
+const followRoutes = require('./routes/follows');
+const notificationRoutes = require('./routes/notifications');
+const trendingRoutes = require('./routes/trending');
 
 // Use routes
 app.use('/api/tweets', tweetRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/follows', followRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/trending', trendingRoutes);
 
 // Test route
 app.get('/api/test', (req, res) => {

@@ -37,6 +37,9 @@ interface AuthContextType {
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Export the context
+export { AuthContext };
+
 // Auth Provider Props
 interface AuthProviderProps {
   children: ReactNode;
