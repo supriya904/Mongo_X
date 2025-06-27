@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Login function
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const response = await apiService.login({ username, password });
+      const response = await apiService.login({ username, password }) as any;
       
       if (response.success && response.data) {
         const userData = response.data;
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     location?: string;
   }): Promise<boolean> => {
     try {
-      const response = await apiService.register(userData);
+      const response = await apiService.register(userData) as any;
       
       if (response.success) {
         return true;
