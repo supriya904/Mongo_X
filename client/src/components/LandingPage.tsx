@@ -1,23 +1,39 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import userData from '../data/users.json';
+import { useAuth } from '../context/AuthContext';
 import SignupModal from './SignupModal';
 
 const LandingPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { login, register } = useAuth();
 
-  const handleLogin = () => {
-    const user = userData.users.find(
-      (u) => u.username === username && u.password === password
-    );
-    if (user) {
-      navigate('/home');
-    } else {
-      setError('Invalid credentials');
+  const handleLogin = async () => {
+    if (!username.trim() || !password.trim()) {
+      setError('Please enter both username and password');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const success = await login(username, password);
+      
+      if (success) {
+        // Navigate to home page
+        navigate('/home');
+      } else {
+        setError('Invalid username or password');
+      }
+    } catch (error: any) {
+      setError(error.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -32,47 +48,40 @@ const LandingPage = () => {
       year: string;
     };
   }) => {
-    try {
-      // Check if username already exists
-      const existingUser = userData.users.find(
-        (u) => u.username === newUserData.username
-      );
-      
-      if (existingUser) {
-        alert('Username already exists. Please choose a different username.');
-        return;
-      }
+    setIsLoading(true);
+    setError('');
 
-      // Add new user to the users array
-      const updatedUsers = {
-        users: [...userData.users, {
-          username: newUserData.username,
-          password: newUserData.password,
-          name: newUserData.name,
-          email: newUserData.email,
-          dateOfBirth: newUserData.dateOfBirth
-        }]
+    try {
+      // Convert date of birth to ISO string
+      const dateOfBirth = new Date(
+        parseInt(newUserData.dateOfBirth.year),
+        parseInt(newUserData.dateOfBirth.month) - 1, // Month is 0-indexed
+        parseInt(newUserData.dateOfBirth.day)
+      ).toISOString();
+
+      // Create user data for API
+      const userData = {
+        username: newUserData.username,
+        email: newUserData.email,
+        password: newUserData.password,
+        name: newUserData.name,
+        dateOfBirth: dateOfBirth,
       };
 
-      // Save to file using the Vite dev server
-      const response = await fetch('/api/saveUser', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedUsers),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save user data');
-      }
-
-      setIsSignupModalOpen(false);
-      alert('Account created successfully! Please sign in.');
+      const response = await register(userData);
       
-    } catch (error) {
-      console.error('Error saving user:', error);
-      alert('Failed to create account. Please try again.');
+      if (response) {
+        setIsSignupModalOpen(false);
+        alert('Account created successfully! Please sign in.');
+        // Clear form
+        setUsername('');
+        setPassword('');
+      }
+    } catch (error: any) {
+      console.error('Error creating account:', error);
+      alert(error.message || 'Failed to create account. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -116,27 +125,33 @@ const LandingPage = () => {
                 placeholder="Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-black border border-gray-600 rounded-md px-4 py-2 focus:outline-none focus:border-blue-500"
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                disabled={isLoading}
+                className="w-full bg-black border border-gray-600 rounded-md px-4 py-2 focus:outline-none focus:border-blue-500 disabled:opacity-50"
               />
               <input
                 type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-black border border-gray-600 rounded-md px-4 py-2 focus:outline-none focus:border-blue-500"
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                disabled={isLoading}
+                className="w-full bg-black border border-gray-600 rounded-md px-4 py-2 focus:outline-none focus:border-blue-500 disabled:opacity-50"
               />
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <button
                 onClick={handleLogin}
-                className="w-full bg-blue-500 text-white rounded-full py-2 px-4 font-medium hover:bg-blue-600 transition-colors"
+                disabled={isLoading}
+                className="w-full bg-blue-500 text-white rounded-full py-2 px-4 font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign in
+                {isLoading ? 'Signing in...' : 'Sign in'}
               </button>
             </div>
 
             <button
               onClick={() => setIsSignupModalOpen(true)}
-              className="w-full bg-transparent border border-gray-600 text-blue-500 rounded-full py-2 px-4 font-medium hover:bg-blue-500/10 transition-colors"
+              disabled={isLoading}
+              className="w-full bg-transparent border border-gray-600 text-blue-500 rounded-full py-2 px-4 font-medium hover:bg-blue-500/10 transition-colors disabled:opacity-50"
             >
               Create account
             </button>
@@ -157,6 +172,7 @@ const LandingPage = () => {
         isOpen={isSignupModalOpen}
         onClose={() => setIsSignupModalOpen(false)}
         onSignup={handleSignup}
+        isLoading={isLoading}
       />
     </>
   );

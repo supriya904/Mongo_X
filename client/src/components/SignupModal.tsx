@@ -14,52 +14,109 @@ interface SignupModalProps {
       day: string;
       year: string;
     };
-  }) => void;
+  }) => Promise<void>;
+  isLoading?: boolean;
 }
 
-const SignupModal = ({ isOpen, onClose, onSignup }: SignupModalProps) => {
+const SignupModal = ({ isOpen, onClose, onSignup, isLoading = false }: SignupModalProps) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [month, setMonth] = useState('December');
+  const [month, setMonth] = useState('12');
   const [day, setDay] = useState('1');
   const [year, setYear] = useState('2002');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    { value: '1', label: 'January' },
+    { value: '2', label: 'February' },
+    { value: '3', label: 'March' },
+    { value: '4', label: 'April' },
+    { value: '5', label: 'May' },
+    { value: '6', label: 'June' },
+    { value: '7', label: 'July' },
+    { value: '8', label: 'August' },
+    { value: '9', label: 'September' },
+    { value: '10', label: 'October' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'December' }
   ];
 
   const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
 
-  const handleSubmit = () => {
-    if (!name || !email || !username || !password) {
-      setError('All fields are required');
+  const handleSubmit = async () => {
+    // Validation
+    if (!name.trim()) {
+      setError('Name is required');
       return;
     }
     
-    onSignup({
-      name,
-      email,
-      username,
-      password,
-      dateOfBirth: {
-        month,
-        day,
-        year
-      }
-    });
+    if (!email.trim()) {
+      setError('Email is required');
+      return;
+    }
     
-    // Reset form
-    setName('');
-    setEmail('');
-    setUsername('');
-    setPassword('');
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    if (!username.trim()) {
+      setError('Username is required');
+      return;
+    }
+    
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters long');
+      return;
+    }
+    
+    if (!password.trim()) {
+      setError('Password is required');
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    setIsSubmitting(true);
     setError('');
+    
+    try {
+      await onSignup({
+        name: name.trim(),
+        email: email.trim(),
+        username: username.trim(),
+        password,
+        dateOfBirth: {
+          month,
+          day,
+          year
+        }
+      });
+      
+      // Reset form on success
+      setName('');
+      setEmail('');
+      setUsername('');
+      setPassword('');
+      setMonth('12');
+      setDay('1');
+      setYear('2002');
+      setError('');
+    } catch (error: any) {
+      setError(error.message || 'Failed to create account');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -93,7 +150,8 @@ const SignupModal = ({ isOpen, onClose, onSignup }: SignupModalProps) => {
               placeholder="Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500"
+              disabled={isSubmitting || isLoading}
+              className="w-full bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50"
             />
           </div>
 
@@ -103,7 +161,8 @@ const SignupModal = ({ isOpen, onClose, onSignup }: SignupModalProps) => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500"
+              disabled={isSubmitting || isLoading}
+              className="w-full bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50"
             />
           </div>
 
@@ -113,7 +172,8 @@ const SignupModal = ({ isOpen, onClose, onSignup }: SignupModalProps) => {
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500"
+              disabled={isSubmitting || isLoading}
+              className="w-full bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50"
             />
           </div>
 
@@ -123,7 +183,8 @@ const SignupModal = ({ isOpen, onClose, onSignup }: SignupModalProps) => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500"
+              disabled={isSubmitting || isLoading}
+              className="w-full bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50"
             />
           </div>
 
@@ -136,17 +197,19 @@ const SignupModal = ({ isOpen, onClose, onSignup }: SignupModalProps) => {
               <select
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
-                className="bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500"
+                disabled={isSubmitting || isLoading}
+                className="bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50"
               >
                 {months.map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                  <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
               </select>
 
               <select
                 value={day}
                 onChange={(e) => setDay(e.target.value)}
-                className="bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500"
+                disabled={isSubmitting || isLoading}
+                className="bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50"
               >
                 {days.map((d) => (
                   <option key={d} value={d}>{d}</option>
@@ -156,7 +219,8 @@ const SignupModal = ({ isOpen, onClose, onSignup }: SignupModalProps) => {
               <select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500"
+                disabled={isSubmitting || isLoading}
+                className="bg-black border border-gray-600 rounded text-white px-4 py-3 focus:outline-none focus:border-blue-500 disabled:opacity-50"
               >
                 {years.map((y) => (
                   <option key={y} value={y}>{y}</option>
@@ -172,9 +236,10 @@ const SignupModal = ({ isOpen, onClose, onSignup }: SignupModalProps) => {
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-white text-black rounded-full py-3 px-4 font-bold mt-8 hover:bg-gray-200 transition-colors"
+          disabled={isSubmitting || isLoading}
+          className="w-full bg-white text-black rounded-full py-3 px-4 font-bold mt-8 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Next
+          {isSubmitting ? 'Creating Account...' : 'Create Account'}
         </button>
       </div>
     </div>
